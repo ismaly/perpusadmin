@@ -100,6 +100,7 @@
           }, 5000); // 5000 ms = 5 detik
       }
   });
+  
 </script>
 {{-- <script type="text/javascript">
   $(document).ready(function() {
@@ -133,6 +134,24 @@
       });
   });
 </script> --}}
+
+<script>
+  $(document).ready(function() {
+    $('#search').on('keyup', function() {
+      var query = $(this).val();
+      $.ajax({
+        url: "{{ route('dashboard.search') }}",
+        type: "GET",
+        data: { 'search': query },
+        success: function(data) {
+          $('#searchResults').html(data);
+        }
+      });
+    });
+  });
+</script>
+
+
 
 
 

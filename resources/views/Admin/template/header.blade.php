@@ -28,21 +28,18 @@
                 <li class="nav-item topbar-user dropdown hidden-caret">
                     <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                         <div class="avatar-sm">
-                            <img src="{{ asset ('assets/img/profile.jpg') }}" alt="..." class="avatar-img rounded-circle"/>
+                            <img src="{{ asset ('assets/img/logo-profile.jpg') }}" alt="..." class="avatar-img rounded-circle"/>
                         </div>
                         <span class="profile-username">
-                            <span class="op-7">Selamat Datang,</span>
-                            <span class="fw-bold">Nama</span>
+                            <span class="op-7">Selamat Datang</span>
+                            {{-- <span class="fw-bold">{{ $nama }}</span> --}}
                         </span>
                     </a>
                     <ul class="dropdown-menu dropdown-user animated fadeIn">
                         <div class="dropdown-user-scroll scrollbar-outer">
                             <li>
                                 <div class="user-box">
-                                    <a class="dropdown-item" href="#">Profil</a>
-                                </div>
-                                <div class="user-box">
-                                    <a class="dropdown-item" href="#">Logout</a>
+                                    <a class="dropdown-item" href="{{ route('login') }}">Logout</a>
                                 </div>
                             </li>
                         </div>

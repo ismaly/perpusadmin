@@ -6,6 +6,7 @@
         <div>
           <h3 class="fw-bold mb-3">Daftar Anggota</h3>
           <a href="{{ route ('FormAnggota') }}" class="btn btn-primary btn-sm"> Tambah Data </a>
+          <a href="{{ route('exportPDFAnggota') }}" class="btn btn-success btn-sm"> Export PDF </a>
         </div>
       </div>
 
@@ -34,7 +35,7 @@
                                     <th>Tanggal Lahir</th>
                                     <th>Kelas</th>
                                     {{-- <th>Alamat</th> --}}
-                                    <th>Jenis Kelamin</th>
+                                    <th>No Telpon</th>
                                     {{-- <th>No. Telepon</th>
                                     <th>Email</th> --}}
                                     <th>Status Anggota</th>
@@ -50,7 +51,7 @@
                                         <td>{{ \Carbon\Carbon::parse($anggota->tgl_lahir)->format('d-m-Y') }}</td>
                                         <td>{{ $anggota->kelas }}</td>
                                         {{-- <td>{{ $anggota->alamat }}</td> --}}
-                                        <td>{{ $anggota->jenis_kelamin }}</td>
+                                        <td>{{ $anggota->no_telepon}}</td>
                                         {{-- <td>{{ $anggota->no_telepon }}</td>
                                         <td>{{ $anggota->email }}</td> --}}
                                         <td>{{ $anggota->status_anggota }}</td>

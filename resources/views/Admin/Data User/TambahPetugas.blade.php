@@ -46,6 +46,15 @@
                                         <input id="password" name="password" type="password" class="form-control"
                                             value="{{ old('password', isset($petugas) ? $petugas->password : '') }}">
                                     </div>
+
+                                    <div class="mb-3">
+                                        <label for="role" class="form-label">Role</label>
+                                        <select class="form-select" id="role" name="role" required>
+                                            <option value="">-- Pilih Role --</option>
+                                            <option value="petugas" {{ old('role', isset($petugas) ? $petugas->role : '') == 'petugas' ? 'selected' : '' }}>Petugas</option>
+                                            <option value="admin" {{ old('role', isset($petugas) ? $petugas->role : '') == 'admin' ? 'selected' : '' }}>Admin</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>

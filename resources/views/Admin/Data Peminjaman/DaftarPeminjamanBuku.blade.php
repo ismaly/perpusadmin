@@ -6,6 +6,7 @@
         <div>
           <h3 class="fw-bold mb-3">Daftar Peminjaman Buku</h3>
           <a href="{{ route ('FormPeminjamanBuku') }}" class="btn btn-primary btn-sm"> Tambah Data </a>
+          <a href="{{ route('exportPDFPeminjaman') }}" class="btn btn-success btn-sm"> Export PDF </a>
         </div>
       </div>
 
@@ -29,80 +30,53 @@
                           <thead>
                               <tr>
                                   <th style="width: 1%">No</th>
-                                  <th>Kategori</th>
-                                  <th>Lokasi Buku</th>
-                                  <th>Judul Buku</th>
-                                  <th>Jenis Buku</th>
-                                  <th>Penulis</th>
-                                  <th>Penerbit</th>
-                                  <th>Tahun Terbit</th>
+                                  <th>NIS & Nama Peminjam</th>
+                                  <th>Kode & Judul Buku</th>
+                                  {{-- <th>Kategori Buku</th> --}}
+                                  <th>Jadwal Peminjaman</th>
+                                  <th>Jadwal Pengembalian</th>
+                                  <th>Status</th>
                                   <th>Action</th>
                               </tr>
                           </thead>
                           <tbody>
-                              @foreach($daftarbuku as $index => $buku)
+                              @foreach($daftarpeminjaman as $index => $peminjaman)
                                   <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ $buku->kategori->nama_kategori ?? 'Tidak ada kategori' }}</td>
-                                        <td>{{ $buku->kategori->lokasi_buku ?? 'Tidak ada lokasi' }}</td>
-                                        <td>{{ $buku->judul_buku }}</td>
-                                        <td>{{ $buku->jenis_buku }}</td>
-                                        <td>{{ $buku->penulis }}</td>
-                                        <td>{{ $buku->penerbit }}</td>
-                                        <td>{{ $buku->tahun_terbit }}</td>
+                                        <td>({{ $peminjaman->anggota->nis ?? 'Tidak ada anggota' }})-{{ $peminjaman->anggota->nama ?? 'Tidak ada anggota' }}</td>
+                                        <td>({{ $peminjaman->buku->kode_buku ?? 'Tidak ada buku' }}) {{ $peminjaman->buku->judul_buku ?? 'Tidak ada buku' }}</td>
+                                        {{-- <td>{{ $peminjaman->buku->kategori->nama_kategori ?? 'Tidak ada kategori' }}</td> --}}
+                                        <td>{{ \Carbon\Carbon::parse($peminjaman->tanggal_peminjaman)->format('d/m/Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($peminjaman->tanggal_pengembalian)->format('d/m/Y') }}</td>
+                                        <td>{{ $peminjaman->status ?? 'Tidak ada peminjaman' }}</td>
+
+
                                         <td>
                                             <div class="form-button-action">
-                                                <button type="button" class="btn btn-link btn-primary btn-lg" 
-                                                        data-bs-toggle="modal" data-bs-target="#modalDetailBuku{{ $buku->id_buku }}">
-                                                    <i class="fa fa-eye"></i>
-                                                </button>
-                                                <a href="{{ route('FormBuku', $buku->id_buku) }}" class="btn btn-link btn-primary btn-lg">
-                                                    <i class="fa fa-edit"></i>
-                                                </a>
+                                                @if($peminjaman->status != 'selesai')
+                                                    <a href="{{ route('FormPeminjamanBuku', $peminjaman->id_transaksi) }}" class="btn btn-link btn-primary btn-lg">
+                                                        <i class="fa fa-edit"></i>
+                                                    </a>
+                                                @endif
                                                 <button type="button" class="btn btn-link btn-danger btn-lg" 
-                                                        data-bs-toggle="modal" data-bs-target="#modalHapus{{ $buku->id_buku }}">
+                                                        data-bs-toggle="modal" data-bs-target="#modalHapus{{ $peminjaman->id_transaksi }}">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>
                                   </tr>
                                   {{-- Modal Button Detail Buku --}}
-                                  <div class="modal fade" id="modalDetailBuku{{ $buku->id_buku }}" tabindex="-1" aria-labelledby="modalDetailLabel" aria-hidden="true">
+                                  <div class="modal fade" id="modalDetailPeminjaman{{ $peminjaman->id_transaksi }}" tabindex="-1" aria-labelledby="modalDetailLabel" aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" id="modalDetailLabel">Detail Buku</h5>
+                                                <h5 class="modal-title" id="modalDetailLabel">Detail Peminjaman</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
                                             <div class="modal-body">
                                                 <div class="form-group">
-                                                    <label><strong>Kategori:</strong></label>
-                                                    <p>{{ $buku->kategori->nama_kategori ?? 'Tidak ada kategori' }}</p>
-
-                                                    <label><strong>Lokasi Buku:</strong></label>
-                                                    <p>{{ $buku->kategori->lokasi_buku ?? 'Tidak ada lokasi' }}</p>
-
-                                                    <label><strong>Judul Buku:</strong></label>
-                                                    <p>{{ $buku->judul_buku ?? 'Tidak ada jenis' }}</p>
-
-                                                    <label><strong>Jenis Buku:</strong></label>
-                                                    <p>{{ $buku->jenis_buku ?? 'Tidak ada jenis' }}</p>
-
-                                                    <label><strong>Penulis:</strong></label>
-                                                    <p>{{ $buku->penulis ?? 'Tidak ada jenis'  }}</p>
-
-                                                    <label><strong>Penerbit:</strong></label>
-                                                    <p>{{ $buku->penerbit ?? 'Tidak ada jenis' }}</p>
-
-                                                    <label><strong>Tahun Terbit:</strong></label>
-                                                    <p>{{ $buku->tahun_terbit  ?? 'Tidak ada jenis' }}</p>
-
-                                                    <label><strong>Gambar Buku:</strong></label><br>
-                                                    @if(isset($buku) && $buku->image_buku)
-                                                        <img src="{{ Storage::url($buku->image_buku) }}" alt="Gambar Buku" class="img-fluid" style="max-width: 200px; height: auto;">
-                                                    @else
-                                                        <p>Tidak ada gambar buku yang diunggah.</p>
-                                                    @endif
+                                                    <label><strong>Nama Anggota:</strong></label>
+                                                    <p>{{ $peminjaman->anggota->nama ?? 'Tidak ada anggota' }}</p>
 
                                                 </div>
                                                 
@@ -116,7 +90,7 @@
                                 
 
                                   {{-- Modal Button Hapus --}}
-                                    <div class="modal fade" id="modalHapus{{ $buku->id_buku }}" tabindex="-1" role="dialog" aria-labelledby="modalHapusLabel" aria-hidden="true">
+                                    <div class="modal fade" id="modalHapus{{ $peminjaman->id_transaksi }}" tabindex="-1" role="dialog" aria-labelledby="modalHapusLabel" aria-hidden="true">
                                         <div class="modal-dialog" role="document">
                                         <div class="modal-content">
                                             <div class="modal-header">
@@ -126,11 +100,11 @@
                                             </button>
                                             </div>
                                             <div class="modal-body">
-                                            Apakah Anda yakin ingin menghapus Buku <strong>{{ $buku->judul_buku }}</strong>?
+                                            Apakah Anda yakin ingin menghapus Peminjaman Buku <strong>{{ $peminjaman->anggota->nama ?? 'Tidak ada anggota' }}</strong>?
                                             </div>
                                             <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                            <form action="{{ route('buku-delete', $buku->id_buku) }}" method="POST">
+                                            <form action="{{ route('peminjaman-delete', $peminjaman->id_transaksi) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger">Hapus</button>

@@ -41,6 +41,11 @@
                                         </select>
                                     </div>
                                     <div class="form-group form-group-default">
+                                        <label>Kode Buku</label>
+                                        <input id="kode_buku" name="kode_buku" type="text" class="form-control" 
+                                               value="{{ old('kode_buku', isset($buku) ? $buku->kode_buku : '') }}" required>
+                                    </div>
+                                    <div class="form-group form-group-default">
                                         <label>Judul Buku</label>
                                         <input id="judul_buku" name="judul_buku" type="text" class="form-control" 
                                                value="{{ old('judul_buku', isset($buku) ? $buku->judul_buku : '') }}" required>
@@ -81,11 +86,7 @@
                                         @endif
                                     </div>
 
-                                    <div class="form-group form-group-default">
-                                        <label>Jumlah Stok</label>
-                                        <input id="stok" name="stok" type="number" class="form-control" 
-                                               value="{{ old('stok', isset($buku) ? $buku->stok : '') }}" required>
-                                    </div>
+                                    
                                     
                                 </div>
                             </div>

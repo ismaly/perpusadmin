@@ -6,6 +6,8 @@
         <div>
           <h3 class="fw-bold mb-3">Daftar Kategori Buku</h3>
           <a href="{{ route ('FormKategoriBuku') }}" class="btn btn-primary btn-sm"> Tambah Data </a>
+          <a href="{{ route('exportPDFKategori') }}" class="btn btn-success btn-sm"> Export PDF </a>
+
         </div>
       </div>
 

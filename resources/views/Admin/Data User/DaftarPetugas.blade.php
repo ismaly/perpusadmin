@@ -5,7 +5,10 @@
       <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
         <div>
           <h3 class="fw-bold mb-3">Daftar Petugas</h3>
+          @if(Auth::check() && Auth::user()->role != 'petugas') <!-- Check if user is not 'petugas' -->
           <a href="{{ route ('FormPetugas') }}" class="btn btn-primary btn-sm"> Tambah Data </a>
+          @endif
+          <a href="{{ route('exportPDFPetugas') }}" class="btn btn-success btn-sm"> Export PDF </a>
         </div>
       </div>
 
@@ -31,7 +34,10 @@
                                     <th style="width: 1%">No</th>
                                     <th>Nama</th>
                                     <th>Email</th>
+                                    <th>Role</th>
+                                    @if(Auth::check() && Auth::user()->role != 'petugas') <!-- Check if user is not 'petugas' -->
                                     <th>Action</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -40,6 +46,8 @@
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $petugas->name }}</td>
                                         <td>{{ $petugas->email }}</td>
+                                        <td>{{ $petugas->role }}</td>
+                                        @if(Auth::check() && Auth::user()->role != 'petugas') <!-- Check if user is not 'petugas' -->
                                         <td>
                                             <div class="form-button-action">
                                                 <button type="button" class="btn btn-link btn-primary btn-lg" 
@@ -55,6 +63,7 @@
                                                 </button>
                                             </div>
                                         </td>
+                                        @endif
                                     </tr>
                         
                                     {{-- Modal Detail Petugas --}}
@@ -71,6 +80,8 @@
                                                         <p>{{ $petugas->name }}</p>
                                                         <label><strong>Email:</strong></label>
                                                         <p>{{ $petugas->email }}</p>
+                                                        <label><strong>Role:</strong></label>
+                                                        <p>{{ $petugas->role }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">

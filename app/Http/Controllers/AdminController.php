@@ -7,16 +7,35 @@ use App\Models\KategoriBuku;
 use App\Models\Buku;
 use App\Models\Anggota;
 use App\Models\User;
-use App\Models\PeminjamanBuku;
+use App\Models\Transaksi;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use PDF;
+
 
 class AdminController extends Controller
 {
     public function dashboard()
     {
-        return view('Admin.dashboard');
+        $jumlahAnggota = Anggota::count();
+        $jumlahBuku = Buku::count();
+        $buku = Buku::all();
+        return view('Admin.dashboard', compact('buku', 'jumlahAnggota', 'jumlahBuku')); // Mengirim variabel $nama ke view
     }
+
+
+    public function search(Request $request)
+    {
+        if ($request->has('search')) {
+            $search = $request->search;
+            $buku = Buku::where('judul_buku', 'LIKE', "%{$search}%")->get();
+        } else {
+            $buku = Buku::all();
+        }
+        return view('Admin.template.search-results', compact('buku'));
+    }
+
 
     ///kategori
     public function DaftarKategoriBuku()
@@ -92,6 +111,16 @@ class AdminController extends Controller
         return redirect()->route('DaftarKategoriBuku')->with('success', 'Kategori Buku berhasil dihapus!');
     }
 
+    public function exportPDFKategori()
+    {
+        $daftarkategori = KategoriBuku::all(); // Ambil semua kategori buku
+
+        // Load view yang akan di-convert menjadi PDF
+        $pdf = PDF::loadView('Admin.Data Kategori.exportKategori', compact('daftarkategori'));
+
+        // Tampilkan PDF di browser sebelum diunduh
+        return $pdf->stream('daftar_kategori.pdf');
+    }
 
     ///Buku
     public function DaftarBuku()
@@ -112,6 +141,7 @@ class AdminController extends Controller
     {
         // Validasi input dari form sesuai dengan struktur tabel Buku
         $request->validate([
+            'kode_buku' => 'required|string|max:100',
             'judul_buku' => 'required|string|max:100',
             'jenis_buku' => 'required|string|max:100',
             'penulis' => 'required|string|max:100',
@@ -119,17 +149,13 @@ class AdminController extends Controller
             'tahun_terbit' => 'required|digits:4|integer|min:1900|max:' . date('Y'),
             'image_buku' => 'required|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'kategori_id' => 'required|exists:KategoriBuku,id_kategori',
-            'stok' => 'required|integer|min:0',
         ]);
 
-        // Cek apakah judul buku dengan kategori yang sama sudah ada
-        $existingBuku = Buku::where('judul_buku', $request->judul_buku)
-            ->where('kategori_id', $request->kategori_id)
-            ->first();
+        // Cek apakah judul buku dan kategori yang sama sudah ada
+        $cekBuku = Buku::where('kode_buku', $request->kode_buku)->first();
 
-        if ($existingBuku) {
-            // Jika buku sudah ada, redirect kembali dengan pesan error
-            return redirect()->back()->with('error', 'Buku dengan judul tersebut sudah ada dalam kategori ini!');
+        if ($cekBuku) {
+            return redirect()->back()->with('error', 'Kode Buku tersebut sudah digunakan!');
         }
 
         // Memproses unggahan gambar jika ada
@@ -138,8 +164,9 @@ class AdminController extends Controller
             $imagePath = $request->file('image_buku')->store('images/buku', 'public');
         }
 
-        // Menyimpan data ke tabel Buku, termasuk image_buku dan stok
+        // Menyimpan data ke tabel Buku, termasuk image_buku dan kategori_id
         Buku::create([
+            'kode_buku' => $request->kode_buku,
             'judul_buku' => $request->judul_buku,
             'jenis_buku' => $request->jenis_buku,
             'penulis' => $request->penulis,
@@ -147,17 +174,18 @@ class AdminController extends Controller
             'tahun_terbit' => $request->tahun_terbit,
             'image_buku' => $imagePath, // Menyimpan path gambar
             'kategori_id' => $request->kategori_id, // Menyimpan kategori_id
-            'stok' => $request->stok, // Menyimpan stok buku
         ]);
 
         // Redirect setelah berhasil menyimpan data
         return redirect()->route('DaftarBuku')->with('success', 'Buku berhasil ditambahkan!');
     }
 
+
     public function updateBuku(Request $request, $id_buku)
     {
         // Validasi input dari form sesuai dengan struktur tabel Buku
         $request->validate([
+            'kode_buku' => 'required|string|max:100',
             'judul_buku' => 'required|string|max:100', // Pengecekan unique untuk judul buku, kecuali yang sedang diupdate
             'jenis_buku' => 'required|string|max:100',
             'penulis' => 'required|string|max:100',
@@ -165,20 +193,18 @@ class AdminController extends Controller
             'tahun_terbit' => 'required|digits:4|integer|min:1900|max:' . date('Y'), // Validasi untuk tahun terbit
             'image_buku' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validasi gambar buku (nullable)
             'kategori_id' => 'required|exists:KategoriBuku,id_kategori', // Validasi kategori_id
-            'stok' => 'required|integer|min:0', // Validasi untuk stok buku
         ]);
+
 
         // Mencari buku berdasarkan ID
         $buku = Buku::findOrFail($id_buku);
 
-        // Cek apakah judul buku dengan kategori yang sama sudah ada
-        $existingBuku = Buku::where('judul_buku', $request->judul_buku)
-            ->where('kategori_id', $request->kategori_id)
-            ->first();
+        // Cek apakah judul buku dengan kategori yang sama sudah ada, kecuali buku yang sedang diupdate
+        $cekBuku = Buku::where('kode_buku', $request->kode_buku)->first();
 
-        if ($existingBuku) {
+        if ($cekBuku) {
             // Jika buku sudah ada, redirect kembali dengan pesan error
-            return redirect()->back()->with('error', 'Buku dengan judul tersebut sudah ada dalam kategori ini!');
+            return redirect()->back()->with('error', 'Kode Buku sudah digunakan!');
         }
 
         // Memproses unggahan gambar jika ada
@@ -196,6 +222,7 @@ class AdminController extends Controller
 
         // Mengupdate data buku
         $buku->update([
+            'kode_buku' => $request->kode_buku,
             'judul_buku' => $request->judul_buku,
             'jenis_buku' => $request->jenis_buku,
             'penulis' => $request->penulis,
@@ -203,7 +230,6 @@ class AdminController extends Controller
             'tahun_terbit' => $request->tahun_terbit,
             'image_buku' => $imagePath, // Menyimpan path gambar
             'kategori_id' => $request->kategori_id, // Mengupdate kategori_id
-            'stok' => $request->stok, // Mengupdate stok buku
         ]);
 
         // Redirect setelah berhasil mengupdate data
@@ -216,6 +242,17 @@ class AdminController extends Controller
         $buku->delete();
 
         return redirect()->route('DaftarBuku')->with('success', 'Buku berhasil dihapus!');
+    }
+
+    public function exportPDFBuku()
+    {
+        $daftarbuku = Buku::with('kategori')->get(); // Ambil semua kategori buku
+
+        // Load view yang akan di-convert menjadi PDF
+        $pdf = PDF::loadView('Admin.Data Buku.exportBuku', compact('daftarbuku'));
+
+        // Tampilkan PDF di browser sebelum diunduh
+        return $pdf->stream('daftar_buku.pdf');
     }
 
     //Data Anggota
@@ -310,6 +347,17 @@ class AdminController extends Controller
         return redirect()->route('DaftarAnggota')->with('success', 'Anggota berhasil dihapus!');
     }
 
+    public function exportPDFAnggota()
+    {
+        $daftaranggota = Anggota::all();
+
+        // Load view yang akan di-convert menjadi PDF
+        $pdf = PDF::loadView('Admin.Data User.exportAnggota', compact('daftaranggota'));
+
+        // Tampilkan PDF di browser sebelum diunduh
+        return $pdf->stream('daftar_anggota.pdf');
+    }
+
     //Data Petugas
     public function DaftarPetugas()
     {
@@ -329,6 +377,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'nullable|email|max:100', // Tambahkan unique untuk email
             'password' => 'required|string|min:8', // Ganti validasi password
+            'role' => 'required|string|in:petugas,admin', // Validasi role
         ]);
         // Cek apakah kombinasi nama kategori dan lokasi buku sudah ada
         $existingUser = User::where('email', $request->email)
@@ -345,6 +394,7 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password), // Enkripsi password
+            'role' => $request->role, // Menyimpan role
         ]);
 
         // Redirect setelah berhasil menyimpan data
@@ -357,6 +407,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:100',
             'email' => 'nullable|email|max:100', // Tambahkan unique untuk email
             'password' => 'required|string|min:8', // Ganti validasi password
+            'role' => 'required|string|in:petugas,admin', // Validasi role
         ]);
 
         $petugas = User::findOrFail($id);
@@ -375,6 +426,7 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password), // Enkripsi password
+            'role' => $request->role, // Menyimpan role
         ]);
 
         // Redirect setelah berhasil memperbarui data
@@ -387,19 +439,180 @@ class AdminController extends Controller
 
         return redirect()->route('DaftarPetugas')->with('success', 'Anggota berhasil dihapus!');
     }
+    public function exportPDFPetugas()
+    {
+        $daftarpetugas = User::all();
+
+        // Load view yang akan di-convert menjadi PDF
+        $pdf = PDF::loadView('Admin.Data User.exportPetugas', compact('daftarpetugas'));
+
+        // Tampilkan PDF di browser sebelum diunduh
+        return $pdf->stream('daftar_petugas.pdf');
+    }
 
     //peminjaman
     public function DaftarPeminjamanBuku()
     {
-        $daftarbuku = Buku::with('kategori')->get(); // Menggunakan eager loading untuk mengambil relasi kategori
-        return view('Admin.Data Peminjaman.DaftarPeminjamanBuku', compact('daftarbuku'));
+        $daftarpeminjaman = Transaksi::with(['buku', 'kategori', 'anggota'])->get(); // Menggunakan eager loading untuk mengambil relasi buku, kategori, dan anggota
+        return view('Admin.Data Peminjaman.DaftarPeminjamanBuku', compact('daftarpeminjaman'));
     }
-    public function FormPeminjamanBuku($id_peminjaman = null)
+
+    public function FormPeminjamanBuku($id_transaksi = null)
     {
-        // Jika ID diberikan, ambil data buku
-        $peminjaman = $id_peminjaman ? Buku::find($id_peminjaman) : null;
-        $kategoriList = KategoriBuku::all();  // Ambil semua kategori untuk dropdown
-        $anggotaList = Anggota::all();  // Ambil semua kategori untuk dropdown
-        return view('Admin.Data Buku.TambahPeminjamanBuku', compact('peminjaman', 'kategoriList', 'angotaList'));
+        // Jika ID diberikan, ambil data peminjaman
+        $peminjaman = $id_transaksi ? Transaksi::find($id_transaksi) : null;
+
+        // Ambil semua buku, anggota, dan kategori untuk dropdown
+        $bukuList = Buku::with('kategori')->get();  // Pastikan ada relasi dengan kategori
+        $anggotaList = Anggota::all();
+        return view('Admin.Data Peminjaman.TambahPeminjamanBuku', compact('peminjaman', 'bukuList', 'anggotaList'));
+    }
+    // Menyimpan data peminjaman baru
+    public function storePeminjaman(Request $request)
+    {
+        $request->validate([
+            'id_buku' => 'required|exists:Buku,id_buku',
+            'id_anggota' => 'required|exists:Anggota,id_anggota',
+            'tanggal_peminjaman' => 'required|date',
+            'tanggal_pengembalian' => 'required|date|after_or_equal:tanggal_peminjaman',
+        ]);
+
+        // Cek apakah anggota sudah meminjam buku yang sama dengan status aktif
+        $existingPeminjaman = Transaksi::where('id_buku', $request->id_buku)
+            ->where('id_anggota', $request->id_anggota)
+            ->where('status', 'aktif')
+            ->first();
+
+        if ($existingPeminjaman) {
+            return redirect()->route('DaftarPeminjamanBuku')->with('error', 'Anggota ini sudah meminjam buku yang sama dengan status aktif.');
+        }
+
+        // Jika tidak ada peminjaman aktif, buat peminjaman baru
+        Transaksi::create([
+            'id_buku' => $request->id_buku,
+            'id_anggota' => $request->id_anggota,
+            'tanggal_peminjaman' => $request->tanggal_peminjaman,
+            'tanggal_pengembalian' => $request->tanggal_pengembalian,
+            'status' => 'aktif', // Status saat peminjaman dibuat
+        ]);
+
+        return redirect()->route('DaftarPeminjamanBuku')->with('success', 'Peminjaman buku berhasil ditambahkan!');
+    }
+
+    // Memperbarui data peminjaman
+    public function updatePeminjaman(Request $request, $id_transaksi)
+    {
+        $request->validate([
+            'id_buku' => 'required|exists:Buku,id_buku',
+            'id_anggota' => 'required|exists:Anggota,id_anggota',
+            'tanggal_peminjaman' => 'required|date',
+            'tanggal_pengembalian' => 'required|date|after_or_equal:tanggal_peminjaman',
+        ]);
+
+        // Mencari peminjaman berdasarkan ID
+        $peminjaman = Transaksi::findOrFail($id_transaksi);
+        $bukuBaru = Buku::findOrFail($request->id_buku);
+
+        // Cek jika buku baru berbeda dari buku sebelumnya
+        if ($peminjaman->id_buku != $request->id_buku) {
+            // Cek apakah anggota sudah meminjam buku baru dengan status aktif
+            $existingPeminjaman = Transaksi::where('id_buku', $request->id_buku)
+                ->where('id_anggota', $request->id_anggota)
+                ->where('status', 'aktif')
+                ->first();
+
+            if ($existingPeminjaman) {
+                return redirect()->route('DaftarPeminjamanBuku')->with('error', 'Anggota ini sudah meminjam buku yang sama dengan status aktif.');
+            }
+        }
+
+        // Update data peminjaman
+        $peminjaman->update([
+            'id_buku' => $request->id_buku,
+            'id_anggota' => $request->id_anggota,
+            'tanggal_peminjaman' => $request->tanggal_peminjaman,
+            'tanggal_pengembalian' => $request->tanggal_pengembalian,
+            // status tetap tidak diubah di sini
+        ]);
+
+        return redirect()->route('DaftarPeminjamanBuku')->with('success', 'Peminjaman buku berhasil diperbarui!');
+    }
+
+    public function deletePeminjaman($id_transaksi)
+    {
+        // Cari data peminjaman berdasarkan ID
+        $peminjaman = Transaksi::findOrFail($id_transaksi);
+        // Hapus data peminjaman
+        $peminjaman->delete();
+
+        return redirect()->route('DaftarPeminjamanBuku')->with('success', 'Peminjaman berhasil dihapus dan stok buku dikembalikan!');
+    }
+
+    public function exportPDFPeminjaman()
+    {
+        $daftarpeminjaman = Transaksi::with(['buku', 'kategori', 'anggota'])->get(); // Menggunakan eager loading untuk mengambil relasi buku, kategori, dan anggota
+
+        // Load view yang akan di-convert menjadi PDF
+        $pdf = PDF::loadView('Admin.Data Peminjaman.exportPeminjaman', compact('daftarpeminjaman'));
+
+        // Tampilkan PDF di browser sebelum diunduh
+        return $pdf->stream('daftar_peminjaman.pdf');
+    }
+
+    //pengembalian
+    public function DaftarPengembalianBuku()
+    {
+        $daftarpengembalian = Transaksi::with(['buku.kategori', 'anggota'])->get();
+        return view('Admin.Data Pengembalian.DaftarPengembalianBuku', compact('daftarpengembalian'));
+    }
+    public function FormPengembalianBuku($id_transaksi = null)
+    {
+        // Jika ID diberikan, ambil data peminjaman
+        $pengembalian = $id_transaksi ? Transaksi::find($id_transaksi) : null;
+
+        // Ambil semua buku, anggota, dan kategori untuk dropdown
+        $bukuList = Buku::with('kategori')->get();  // Pastikan ada relasi dengan kategori
+        $anggotaList = Anggota::all();
+        return view('Admin.Data Pengembalian.TambahPengembalianBuku', compact('pengembalian', 'bukuList', 'anggotaList'));
+    }
+
+    public function updatePengembalian(Request $request, $id_transaksi)
+    {
+        $request->validate([
+            'tanggal_pengembalian_real' => 'required|date|after_or_equal:tanggal_peminjaman',
+        ]);
+
+        // Mencari pengembalian buku berdasarkan ID
+        $pengembalian = Transaksi::findOrFail($id_transaksi);
+
+        // Update tanggal pengembalian real dan ubah status menjadi 'selesai'
+        $pengembalian->update([
+            'tanggal_pengembalian_real' => $request->tanggal_pengembalian_real,
+            'status' => 'selesai', // Mengubah status menjadi selesai
+        ]);
+
+        return redirect()->route('DaftarPengembalianBuku')->with('success', 'Buku berhasil dikembalikan!');
+    }
+
+    public function deletePengembalian($id_transaksi)
+    {
+        // Cari data peminjaman berdasarkan ID
+        $pengembalian = Transaksi::findOrFail($id_transaksi);
+
+        // Hapus data peminjaman
+        $pengembalian->delete();
+
+        return redirect()->route('DaftarPengembalianBuku')->with('success', 'Pengembalian berhasil dihapus dan stok buku dikembalikan!');
+    }
+
+    public function exportPDFPengembalian()
+    {
+        $daftarpengembalian = Transaksi::with(['buku.kategori', 'anggota'])->get();
+
+        // Load view yang akan di-convert menjadi PDF
+        $pdf = PDF::loadView('Admin.Data Pengembalian.exportPengembalian', compact('daftarpengembalian'));
+
+        // Tampilkan PDF di browser sebelum diunduh
+        return $pdf->stream('daftar_pengembalian.pdf');
     }
 }

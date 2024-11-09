@@ -6,6 +6,7 @@
         <div>
           <h3 class="fw-bold mb-3">Daftar Buku</h3>
           <a href="{{ route ('FormBuku') }}" class="btn btn-primary btn-sm"> Tambah Data </a>
+          <a href="{{ route('exportPDFBuku') }}" class="btn btn-success btn-sm"> Export PDF </a>
         </div>
       </div>
 
@@ -31,12 +32,13 @@
                                   <th style="width: 1%">No</th>
                                   <th>Kategori</th>
                                   <th>Lokasi Buku</th>
+                                  <th>Kode Buku</th>
                                   <th>Judul Buku</th>
                                   <th>Jenis Buku</th>
                                   {{-- <th>Penulis</th>
                                   <th>Penerbit</th> --}}
                                   <th>Tahun Terbit</th>
-                                  <th>Stok</th>
+                                  {{-- <th>Stok</th> --}}
                                   <th>Action</th>
                               </tr>
                           </thead>
@@ -46,12 +48,13 @@
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $buku->kategori->nama_kategori ?? 'Tidak ada kategori' }}</td>
                                         <td>{{ $buku->kategori->lokasi_buku ?? 'Tidak ada lokasi' }}</td>
+                                        <td>{{ $buku->kode_buku }}</td>
                                         <td>{{ $buku->judul_buku }}</td>
                                         <td>{{ $buku->jenis_buku }}</td>
                                         {{-- <td>{{ $buku->penulis }}</td>
                                         <td>{{ $buku->penerbit }}</td> --}}
                                         <td>{{ $buku->tahun_terbit }}</td>
-                                        <td>{{ $buku->stok }}</td>
+                                        {{-- <td>{{ $buku->stok }}</td> --}}
                                         <td>
                                             <div class="form-button-action">
                                                 <button type="button" class="btn btn-link btn-primary btn-lg" 
@@ -83,6 +86,9 @@
 
                                                     <label><strong>Lokasi Buku:</strong></label>
                                                     <p>{{ $buku->kategori->lokasi_buku ?? 'Tidak ada lokasi' }}</p>
+
+                                                    <label><strong>Kode Buku:</strong></label>
+                                                    <p>{{ $buku->kode_buku ?? 'Tidak ada jenis' }}</p>
 
                                                     <label><strong>Judul Buku:</strong></label>
                                                     <p>{{ $buku->judul_buku ?? 'Tidak ada jenis' }}</p>

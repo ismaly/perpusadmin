@@ -8,6 +8,7 @@
           <h6 class="op-7 mb-2">SMA Negeri 1 Ranau Tengah</h6>
         </div>
       </div>
+
       <div class="row">
         <div class="col-sm-6 col-md-3">
           <div class="card card-stats card-round">
@@ -21,7 +22,7 @@
                 <div class="col col-stats ms-3 ms-sm-0">
                   <div class="numbers">
                     <p class="card-category">Jumlah Anggota</p>
-                    <h4 class="card-title">1,294</h4>
+                    <h4 class="card-title">{{ $jumlahAnggota }}</h4>
                   </div>
                 </div>
               </div>
@@ -42,13 +43,24 @@
                 <div class="col col-stats ms-3 ms-sm-0">
                   <div class="numbers">
                     <p class="card-category">Jumlah Buku</p>
-                    <h4 class="card-title">150</h4>
+                    <h4 class="card-title">{{ $jumlahBuku }}</h4>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <input type="text" id="search" class="form-control" placeholder="Masukkan Judul Buku...">
+          </div>
+        </div>
+        <div class="row mt-3" id="searchResults">
+          @include('Admin.template.search-results')
+        </div>
+
+        
 
       </div>
     </div>
